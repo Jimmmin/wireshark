@@ -1,11 +1,12 @@
 package wireshark;
 import java.util.ArrayList;
-
+import java.util.Date;
 import org.jnetpcap.Pcap;
 import org.jnetpcap.PcapHeader;
 import org.jnetpcap.PcapIf;
 import org.jnetpcap.nio.JBuffer;
 import org.jnetpcap.nio.JMemory;
+import org.jnetpcap.packet.JPacketHandler;
 import org.jnetpcap.packet.JRegistry;
 import org.jnetpcap.packet.Payload;
 import org.jnetpcap.packet.PcapPacket;
@@ -13,7 +14,7 @@ import org.jnetpcap.protocol.lan.Ethernet;
 import org.jnetpcap.protocol.network.Ip4;
 import org.jnetpcap.protocol.tcpip.Tcp;
 import org.jnetpcap.packet.format.FormatUtils;
-
+import org.jnetpcap.packet.PcapPacketHandler;
 
 public class method {
 	public static void main(String[] args) {
@@ -47,6 +48,14 @@ public class method {
 			System.out.printf("Network Device Access Failed. Error: "+ errbuf.toString());
 			return;
 		}
+		PcapPacketHandler<String> jPacketHandler = new PcapPacketHandler<String>() {
+			@Override
+				public void nextPacket(PcapPacket packet, String user) {
+					Date captureTime = new Date(packet.getCaptureHeader().timestampInMillis());
+					int dataLength = packet.getCaptureHeader().caplen();
+					System.out.printf("capture time: %s\ncapture length: %d\n", captureTime, dataLength );
+			}
+		};
 		
 		//계층별 객체 생성
 		Ethernet eth = new Ethernet();
@@ -78,15 +87,10 @@ public class method {
 				System.out.printf("페이로드의 길이 = %d\n", getlength(packet, payload));
 				System.out.print(hexdump(packet, payload)); //hexdump 출력
 			}
-		
+			pcap.loop(1, jPacketHandler, "jNetPcap");
+			
 		}
-		/*PcapPacketHandler<String> jPacketHandler = new PcapPacketHandler<String>() {
-			@Override
-				public void nextPacket(PcapPacket packet, String user) {
-					System.out.printf("capture time: %s\ncapture length: %d\n", new Date(packet.getCaptureHeader().timestampInMillis()), packet.getCaptureHeader().caplen());
-			}
-		};
-		pcap.loop(5, jPacketHandler, "jNetPcap");*/
+			
 		pcap.close();
 	
 	}
@@ -123,6 +127,7 @@ public class method {
 	public static String hexdump(PcapPacket packet, Payload payload) {
 		return payload.toHexdump();
 	}
+	
 }
 
 
