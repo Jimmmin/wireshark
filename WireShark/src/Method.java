@@ -18,7 +18,7 @@ import org.jnetpcap.protocol.tcpip.Udp;
 import org.jnetpcap.packet.format.FormatUtils;
 import org.jnetpcap.packet.PcapPacketHandler;
 
-public class method {
+public class Method {
 	public static void main(String[] args) {
 		ArrayList<PcapIf> allDevs = new ArrayList<PcapIf>(); //디바이스를 담을 변수를 arraylist로 생성
 		StringBuilder errbuf = new StringBuilder(); //에러 처리
@@ -31,11 +31,11 @@ public class method {
 		} //예외처리
 		
 		System.out.println("< 탐색된 네트워크 Device >");
-		int i=0;
+		int i=1;
 		
 		for(PcapIf device : allDevs) { //탐색한 장비를 출력
 			String description = (device.getDescription() != null ) ? device.getDescription() : "장비에 대한 설명이 없습니다.";
-			System.out.printf("[%d번]: %s [%s]\n", ++i, device.getName(), description);
+			System.out.printf("[%d번]: %s [%s]\n", i++, device.getName(), description);
 		}
 		
 		PcapIf device = allDevs.get(1);
@@ -50,14 +50,7 @@ public class method {
 			System.out.printf("Network Device Access Failed. Error: "+ errbuf.toString());
 			return;
 		}
-		PcapPacketHandler<String> jPacketHandler = new PcapPacketHandler<String>() {
-			@Override
-				public void nextPacket(PcapPacket packet, String user) {
-					Date captureTime = new Date(packet.getCaptureHeader().timestampInMillis());
-					int dataLength = packet.getCaptureHeader().caplen();
-					System.out.printf("capture time: %s\ncapture length: %d\n", captureTime, dataLength );
-			}
-		};
+		
 		
 		//계층별 객체 생성
 		Icmp icmp = new Icmp();
@@ -69,6 +62,14 @@ public class method {
 		PcapHeader header = new PcapHeader(JMemory.POINTER);
 		JBuffer buf = new JBuffer(JMemory.POINTER);
 		
+		PcapPacketHandler<String> jPacketHandler = new PcapPacketHandler<String>() {
+			@Override
+				public void nextPacket(PcapPacket packet, String user) {
+					Date captureTime = new Date(packet.getCaptureHeader().timestampInMillis());
+					int dataLength = packet.getCaptureHeader().caplen();
+					System.out.printf("capture time: %s\ncapture length: %d\n", captureTime, dataLength );
+			}
+		};
 		
 		int id = JRegistry.mapDLTToId(pcap.datalink()); //pcap의 datalink 유형을 jNetPcap의 프로토콜 id에 맵핑
 		
@@ -90,15 +91,15 @@ public class method {
 			}
 			if (packet.hasHeader(tcp)) {
 				System.out.printf("출발지 TCP 포트 = %d\n도착지 TCP 포트 = %d\n" , tcpSource(packet, tcp), tcpDestination(packet, tcp));
-			}
-			if (packet.hasHeader(udp)) {
+			}else if (packet.hasHeader(udp)) {
 				System.out.printf("출발지 UDP 포트 = %d\n도착지 UDP 포트 = %d\n" , udpSource(packet, udp), udpDestination(packet, udp));
 			}
 			if (packet.hasHeader(payload)) {
 				System.out.printf("페이로드의 길이 = %d\n", getlength(packet, payload));
 				System.out.print(hexdump(packet, payload)); //hexdump 출력
 			}
-			pcap.loop(1, jPacketHandler, "jNetPcap");
+	
+			pcap.loop(1,jPacketHandler, "jNetPcap");
 			
 		}
 			
